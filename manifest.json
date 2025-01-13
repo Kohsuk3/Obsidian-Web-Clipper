@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Obsidian Web Clipper",
+  "version": "1.0",
+  "description": "Save web pages as HTML files to your local folder",
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "tabs"
+  ],
+
+  "action": {
+    "default_popup": "popup.html"
+  },
+
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"]
+  }]
+}
