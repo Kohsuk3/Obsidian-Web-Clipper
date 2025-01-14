@@ -39,15 +39,30 @@ git clone https://github.com/yourusername/obsidian-web-clipper.git
 
 ## 📝 使い方
 
+### 初期設定
+
+1. Chrome拡張機能バーのObsidian Web Clipperアイコンをクリック
+2. 「⚙️ Settings」をクリック
+3. 「Default Save Directory」で保存先フォルダを選択
+4. 必要に応じてファイル名のフォーマットを設定
+   - {{title}}: ページタイトル
+   - {{date}}: 保存日付
+   - {{url}}: ページURL
+5. 「Save Settings」をクリックして設定を保存
+
+### ページの保存
+
 1. 保存したいウェブページを開く
-
 2. Chrome拡張機能バーのObsidian Web Clipperアイコンをクリック
-
 3. 「Save to Obsidian」ボタンをクリック
-
-4. 保存先を選択して保存
+4. 設定した保存先に自動的にMarkdownファイルが保存されます
 
 ## 🎯 機能
+
+### 設定機能
+- 保存先フォルダの指定
+- カスタマイズ可能なファイル名フォーマット
+- 設定の永続化
 
 ### Markdownへの変換
 - 見出し、リスト、リンクなどの基本的なMarkdown要素をサポート

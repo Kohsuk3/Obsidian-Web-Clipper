@@ -5,11 +5,21 @@ function showStatus(message, isError = false) {
   status.className = `status ${isError ? 'error' : 'success'}`;
 }
 
+// ファイル名をサニタイズする関数
+function sanitizeFileName(text) {
+  return text
+    .replace(/[<>:"|?*]/g, '-') // 禁止文字を置換（\は除外）
+    .replace(/\s+/g, '-')       // スペースをハイフンに
+    .replace(/-+/g, '-')        // 連続するハイフンを単一に
+    .replace(/^-|-$/g, '')      // 先頭と末尾のハイフンを削除
+    .substring(0, 100);         // 長さを制限
+}
+
 // ファイル名を生成する関数
 function generateFileName(title) {
   const date = new Date().toISOString().split('T')[0];
-  const sanitizedTitle = title.replace(/[<>:"/\\|?*]/g, '-').substring(0, 100);
-  return `${sanitizedTitle}-${date}.md`;  // 拡張子を.mdに変更
+  const sanitizedTitle = sanitizeFileName(title);
+  return `${sanitizedTitle}-${date}.md`;
 }
 
 // HTMLコンテンツを取得する関数
@@ -44,7 +54,8 @@ async function getPageContent() {
         return {
           title: document.title,
           content: mainContent,
-          frontMatter: frontMatter
+          frontMatter: frontMatter,
+          url: window.location.href
         };
       }
     });
@@ -105,22 +116,64 @@ function convertToMarkdown(html, frontMatter) {
 }
 
 // ファイルを保存する関数
-function saveFile(content, filename) {
-  const blob = new Blob([content], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
+async function saveFile(content, filename) {
+  let objectUrl = null;
   
-  return chrome.downloads.download({
-    url: url,
-    filename: filename,
-    saveAs: true
-  });
+  try {
+    // Blobを作成
+    const blob = new Blob([content], { type: 'text/markdown' });
+    objectUrl = URL.createObjectURL(blob);
+
+    // ダウンロードを実行（ユーザーに保存先を選択させる）
+    const downloadId = await chrome.downloads.download({
+      url: objectUrl,
+      filename: filename,
+      saveAs: true,  // 保存ダイアログを表示
+      conflictAction: 'uniquify'
+    });
+
+    // ダウンロードの完了を待機
+    await new Promise((resolve, reject) => {
+      let timeoutId = setTimeout(() => {
+        chrome.downloads.onChanged.removeListener(listener);
+        reject(new Error('Download timed out'));
+      }, 30000);  // 30秒タイムアウト
+
+      function listener(delta) {
+        if (delta.id === downloadId) {
+          if (delta.state?.current === 'complete') {
+            clearTimeout(timeoutId);
+            chrome.downloads.onChanged.removeListener(listener);
+            resolve();
+          } else if (delta.error) {
+            clearTimeout(timeoutId);
+            chrome.downloads.onChanged.removeListener(listener);
+            reject(new Error(`Download failed: ${delta.error.current}`));
+          }
+        }
+      }
+
+      chrome.downloads.onChanged.addListener(listener);
+    });
+
+    showStatus('File saved successfully! 🎉');
+    return true;
+  } catch (error) {
+    console.error('Error saving file:', error);
+    if (error.message.includes('Invalid filename')) {
+      throw new Error('Invalid characters in filename. Please try again.');
+    }
+    throw error;
+  } finally {
+    // Blobのメモリを解放
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
 }
 
 // メイン処理
 document.addEventListener('DOMContentLoaded', () => {
-  // 初期化時にステータスをクリア
-  showStatus('');
-
   // ボタンのクリックイベントを設定
   document.getElementById('saveButton').addEventListener('click', async () => {
     const button = document.getElementById('saveButton');
@@ -133,10 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
       showStatus('Converting to Markdown...');
       const markdown = convertToMarkdown(pageData.content, pageData.frontMatter);
       
-      showStatus('Saving file...');
-      await saveFile(markdown, generateFileName(pageData.title));
-
-      showStatus('Page saved as Markdown! 🎉');
+      showStatus('Choose where to save the file...');
+      const fileName = generateFileName(pageData.title);
+      await saveFile(markdown, fileName);
     } catch (error) {
       console.error('Error saving file:', error);
       showStatus(

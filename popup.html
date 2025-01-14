@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Obsidian Web Clipper</title>
-  <script src="turndown.js"></script>
   <style>
     body {
       width: 300px;
@@ -46,14 +45,18 @@
       color: #374151;
       text-align: center;
       min-height: 20px;
+      padding: 8px;
+      border-radius: 4px;
     }
 
     .success {
       color: #059669;
+      background-color: #ECFDF5;
     }
 
     .error {
       color: #DC2626;
+      background-color: #FEF2F2;
     }
 
     .icon {
@@ -66,10 +69,13 @@
   <div class="container">
     <button id="saveButton" class="save-button">
       <span class="icon">💾</span>
-      Save to Obsidian
+      Save to Markdown
     </button>
     <div id="status" class="status"></div>
   </div>
+  <!-- Turndownライブラリを先に読み込む -->
+  <script src="turndown.js"></script>
+  <!-- メインスクリプトを後に読み込む -->
   <script src="popup.js"></script>
 </body>
 </html>
