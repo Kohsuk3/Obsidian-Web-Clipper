@@ -1,125 +1,51 @@
-# 🔖 Obsidian Web Clipper
+# Obsidian Web Clipper
 
-<div align="center">
+シンプルなChrome拡張機能で、ウェブページをMarkdownファイルとして保存し、Obsidianで利用できるようにします。
 
-![Obsidian Web Clipper](https://img.shields.io/badge/Platform-Chrome-brightgreen)
-![Version](https://img.shields.io/badge/Version-1.0-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+## 機能
 
-**ウェブページを簡単にObsidianのMarkdownファイルとして保存できるChrome拡張機能**
+- ウェブページの内容をMarkdownに変換
+- YAMLフロントマターの自動生成（タイトル、URL、日付）
+- コードブロックと画像の適切な保持
+- シンプルな1クリック保存
+- 保存先を柔軟に選択可能
 
-[インストール方法](#インストール方法) • [使い方](#使い方) • [機能](#機能) • [開発](#開発)
-
-</div>
-
-## ✨ 特徴
-
-- 🚀 ワンクリックでウェブページをMarkdownに変換
-- 📝 YAMLフロントマターによるメタデータ保存
-- 🎨 コードブロックと画像情報を保持
-- 📋 主要なコンテンツを自動抽出
-- 🔒 安全なローカルファイル保存
-
-## 🛠 インストール方法
+## インストール方法
 
 1. このリポジトリをクローンまたはダウンロード
-```bash
-git clone https://github.com/yourusername/obsidian-web-clipper.git
-```
-
-2. Chrome拡張機能の管理ページを開く
-   - Chrome で `chrome://extensions/` を開く
-   - または メニュー → その他のツール → 拡張機能
-
-3. デベロッパーモードを有効化（右上のトグルスイッチ）
-
+2. Chromeで `chrome://extensions` を開く
+3. 右上の「デベロッパーモード」をオン
 4. 「パッケージ化されていない拡張機能を読み込む」をクリック
+5. ダウンロードしたフォルダを選択
 
-5. ダウンロードした `obsidian-web-clipper` フォルダを選択
+## 使用方法
 
-## 📝 使い方
+1. 保存したいウェブページで拡張機能のアイコンをクリック
+2. 「Save to Markdown」ボタンをクリック
+3. 保存先を選択（Obsidianのvaultフォルダ内を推奨）
+4. 自動生成されたファイル名を必要に応じて変更
+5. 「保存」をクリック
 
-### 初期設定
+## ファイル形式
 
-1. Chrome拡張機能バーのObsidian Web Clipperアイコンをクリック
-2. 「⚙️ Settings」をクリック
-3. 「Default Save Directory」で保存先フォルダを選択
-4. 必要に応じてファイル名のフォーマットを設定
-   - {{title}}: ページタイトル
-   - {{date}}: 保存日付
-   - {{url}}: ページURL
-5. 「Save Settings」をクリックして設定を保存
+保存されるMarkdownファイルは以下の形式になります：
 
-### ページの保存
-
-1. 保存したいウェブページを開く
-2. Chrome拡張機能バーのObsidian Web Clipperアイコンをクリック
-3. 「Save to Obsidian」ボタンをクリック
-4. 設定した保存先に自動的にMarkdownファイルが保存されます
-
-## 🎯 機能
-
-### 設定機能
-- 保存先フォルダの指定
-- カスタマイズ可能なファイル名フォーマット
-- 設定の永続化
-
-### Markdownへの変換
-- 見出し、リスト、リンクなどの基本的なMarkdown要素をサポート
-- コードブロックの言語情報を保持
-- 画像のalt属性とサイズ情報を保持
-
-### メタデータ
-自動的に以下の情報をYAMLフロントマターとして保存：
-```yaml
+```markdown
 ---
 title: ページタイトル
-url: https://example.com
-date: 2024-01-01T12:00:00.000Z
+url: https://example.com/page
+date: 2024-01-01T12:34:56.789Z
 ---
+
+（ページの内容）
 ```
 
-### コンテンツ抽出
-- main要素やarticle要素から主要コンテンツを自動抽出
-- 適切な要素が見つからない場合はページ全体を保存
+## 注意事項
 
-## 🔧 開発
+- ページの内容は可能な限りメインコンテンツを抽出しますが、サイトの構造によっては全体のHTMLが保存される場合があります
+- 画像は元のURLのままリンクとして保存されます
+- コードブロックの言語指定は、元のHTMLの指定がある場合のみ保持されます
 
-### 技術スタック
-- Chrome Extension Manifest V3
-- JavaScript (ES6+)
-- Turndown (HTML to Markdown)
-
-### プロジェクト構造
-```
-obsidian-web-clipper/
-├── manifest.json      # 拡張機能の設定
-├── popup.html        # ポップアップUI
-├── popup.js         # メイン処理
-├── content.js       # コンテンツスクリプト
-└── turndown.js      # Markdown変換ライブラリ
-```
-
-### ビルド方法
-```bash
-cd obsidian-web-clipper
-npm install
-```
-
-## 📄 ライセンス
+## ライセンス
 
 MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してください。
-
-## 🤝 コントリビューション
-
-プルリクエストは大歓迎です！以下の手順で貢献できます：
-
-1. このリポジトリをフォーク
-2. 新しいブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチをプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
-
-## 📮 フィードバック
-
-バグを見つけた場合や新機能のリクエストがある場合は、Issueを作成してください。
