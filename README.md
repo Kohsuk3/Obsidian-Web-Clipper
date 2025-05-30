@@ -152,7 +152,9 @@ date: 2024-01-15T10:30:00.000Z
 ![React Patterns|680](https://example.com/header-image.jpg)
 
 React has evolved significantly since its inception...
+```
 
+**Code blocks preserved perfectly:**
 ```javascript
 // Higher-Order Component Pattern
 const withLoading = (WrappedComponent) => {
@@ -163,33 +165,31 @@ const withLoading = (WrappedComponent) => {
 };
 ```
 
+**Tables maintained beautifully:**
+
 | Pattern | Use Case | Complexity |
 |---------|----------|------------|
 | HOC | Cross-cutting concerns | Medium |
 | Render Props | Flexible rendering | High |
-```
 
 ### 📚 **Documentation**
 ```markdown
 ---
-title: "API Reference - Authentication"
+title: "API Reference - Authentication"  
 url: "https://docs.example.com/auth"
 date: 2024-01-15T14:20:00.000Z
 ---
 
 # Authentication API
 
-## Quick Start
-
 ![API Flow|680](https://docs.example.com/auth-flow.png)
+```
 
-### 1. Obtain API Key
-
+**API examples work flawlessly:**
 ```bash
 curl -X POST https://api.example.com/auth \
   -H "Content-Type: application/json" \
   -d '{"email": "user@example.com"}'
-```
 ```
 
 ---
