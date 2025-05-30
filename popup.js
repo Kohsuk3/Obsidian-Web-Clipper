@@ -466,13 +466,8 @@ function convertToMarkdown(html, frontMatter) {
         const src = node.src || '';
         const title = node.title || '';
         
-        // Obsidianの画像サイズ指定記法に対応
-        let sizeAttr = '';
-        if (node.width || node.height) {
-          const width = node.width ? node.width : '';
-          const height = node.height ? node.height : '';
-          sizeAttr = `|${width}${height ? 'x' + height : ''}`;
-        }
+        // Obsidianの画像サイズ指定記法に対応（全て680pxに統一）
+        let sizeAttr = '|680';
         
         // タイトル属性がある場合の処理
         const titlePart = title ? ` "${title}"` : '';
