@@ -23,7 +23,7 @@ function generateFileName(title) {
 }
 
 // HTMLコンテンツを取得する関数
-async function getPageContent(cleanContentEnabled = true) {
+async function getPageContent(cleanContentEnabled = true, filterSmallImages = true, filterNavigationLinks = true) {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
@@ -38,10 +38,12 @@ async function getPageContent(cleanContentEnabled = true) {
     
     const result = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      args: [cleanContentEnabled],
-      function: (cleanContentEnabled) => {
+      args: [cleanContentEnabled, filterSmallImages, filterNavigationLinks],
+      function: (cleanContentEnabled, filterSmallImages, filterNavigationLinks) => {
         // グローバル変数として設定を渡す
         window.cleanContentEnabled = cleanContentEnabled;
+        window.filterSmallImages = filterSmallImages;
+        window.filterNavigationLinks = filterNavigationLinks;
         // YAMLの値を安全にエスケープする関数
         const escapeYAMLValue = (value) => {
           if (typeof value !== 'string') return value;
@@ -213,6 +215,8 @@ async function getPageContent(cleanContentEnabled = true) {
             'img[width*="16"]', 'img[height*="16"]',
             'img[width*="24"]', 'img[height*="24"]',
             'img[width*="32"]', 'img[height*="32"]',
+            'img[width*="48"]', 'img[height*="48"]',
+            'img[width*="64"]', 'img[height*="64"]',
             'img[src*="icon"]', 'img[alt*="icon"]'
           ];
           
@@ -221,6 +225,79 @@ async function getPageContent(cleanContentEnabled = true) {
             const elements = clonedElement.querySelectorAll(selector);
             elements.forEach(el => el.remove());
           });
+          
+          // 100x100未満の画像を除去（設定に応じて）
+          if (window.filterSmallImages) {
+            const smallImages = clonedElement.querySelectorAll('img');
+            smallImages.forEach(img => {
+            const width = parseInt(img.width) || parseInt(img.getAttribute('width')) || 
+                         parseInt(getComputedStyle(img).width) || 0;
+            const height = parseInt(img.height) || parseInt(img.getAttribute('height')) || 
+                          parseInt(getComputedStyle(img).height) || 0;
+            
+            // サイズが取得できた場合の判定
+            if ((width > 0 && width < 100) || (height > 0 && height < 100)) {
+              img.remove();
+              return;
+            }
+            
+            // naturalWidth/naturalHeightによる判定（実際の画像サイズ）
+            if (img.naturalWidth && img.naturalHeight) {
+              if (img.naturalWidth < 100 || img.naturalHeight < 100) {
+                img.remove();
+                return;
+              }
+            }
+            
+            // srcに明らかなアイコン指標が含まれる場合
+            const src = img.src?.toLowerCase() || '';
+            const alt = img.alt?.toLowerCase() || '';
+            if (src.includes('avatar') || src.includes('logo') || src.includes('icon') || 
+                alt.includes('avatar') || alt.includes('logo') || alt.includes('icon')) {
+              img.remove();
+            }
+            });
+          }
+          
+          // コンテンツに関連性の低いリンクを除去（設定に応じて）
+          if (window.filterNavigationLinks) {
+            const links = clonedElement.querySelectorAll('a');
+            links.forEach(link => {
+            const text = link.textContent.trim();
+            const href = link.href || '';
+            const className = link.className.toLowerCase();
+            
+            // 短すぎるリンクテキスト（ナビゲーション系）
+            if (text.length < 3) {
+              link.replaceWith(...link.childNodes);
+              return;
+            }
+            
+            // ナビゲーション系クラス名
+            if (/nav|menu|button|btn|tag|category|author|profile/.test(className)) {
+              link.replaceWith(...link.childNodes);
+              return;
+            }
+            
+            // 明らかなナビゲーション文言
+            if (/^(home|戻る|次へ|前へ|top|menu|nav|share|tweet|facebook|line)$/i.test(text)) {
+              link.replaceWith(...link.childNodes);
+              return;
+            }
+            
+            // 記事内の参考リンクは保持（長めのテキストまたは文章中）
+            if (text.length > 10 || link.closest('p, li, blockquote')) {
+              // そのまま保持
+              return;
+            }
+            
+            // その他の短いリンクはテキストのみ残す
+            if (text.length < 20) {
+              link.replaceWith(...link.childNodes);
+            }
+            });
+          }
+          
           
           // 空の要素を削除
           const emptyElements = clonedElement.querySelectorAll('div:empty, span:empty, p:empty');
@@ -235,7 +312,16 @@ async function getPageContent(cleanContentEnabled = true) {
             }
           });
           
-          return clonedElement.innerHTML;
+          // 内容が空すぎる場合は元の要素を返す
+          const finalContent = clonedElement.innerHTML;
+          const textLength = clonedElement.textContent?.trim()?.length || 0;
+          
+          if (textLength < 100) {
+            console.warn('Filtered content too short, returning original');
+            return element.innerHTML;
+          }
+          
+          return finalContent;
         };
 
         // 本文のコンテンツを取得（優先順位付きで検索）
@@ -266,28 +352,56 @@ async function getPageContent(cleanContentEnabled = true) {
         if (contentElement) {
           // ユーザーの設定に応じて処理を適用
           if (window.cleanContentEnabled) {
-            mainContent = extractSmartContent(contentElement);
+            try {
+              mainContent = extractSmartContent(contentElement);
+            } catch (extractError) {
+              console.error('Smart content extraction failed:', extractError);
+              mainContent = contentElement.innerHTML;
+            }
           } else {
             mainContent = contentElement.innerHTML;
           }
         } else {
           // フォールバック: body全体にスマート抽出を適用
           if (window.cleanContentEnabled) {
-            mainContent = extractSmartContent(document.body);
+            try {
+              mainContent = extractSmartContent(document.body);
+            } catch (extractError) {
+              console.error('Smart content extraction failed on body:', extractError);
+              mainContent = document.body.innerHTML;
+            }
           } else {
             mainContent = document.body.innerHTML;
           }
         }
+        
+        // 最終的な安全チェック
+        if (!mainContent || mainContent.trim() === '') {
+          console.warn('No content extracted, falling back to body');
+          mainContent = document.body.innerHTML;
+        }
 
-        return {
+        console.log('Final content length:', mainContent?.length || 0);
+        console.log('Page title:', document.title);
+        
+        const result = {
           title: document.title,
           content: mainContent,
           frontMatter: frontMatter,
           url: window.location.href
         };
+        
+        console.log('Returning result:', result);
+        return result;
       }
     });
 
+    console.log('Script execution result:', result);
+    
+    if (!result || !result[0] || !result[0].result) {
+      throw new Error('Script execution returned no result');
+    }
+    
     return result[0].result;
   } catch (error) {
     console.error('Error getting page content:', error);
@@ -296,7 +410,7 @@ async function getPageContent(cleanContentEnabled = true) {
     } else if (error.message.includes('アクティブなタブ') || error.message.includes('ブラウザの内部ページ')) {
       throw error;
     } else {
-      throw new Error('ページ内容の取得に失敗しました。ページを再読み込みしてください。');
+      throw new Error(`ページ内容の取得に失敗しました: ${error.message}。ページを再読み込みしてください。`);
     }
   }
 }
@@ -461,6 +575,15 @@ async function saveFile(content, filename) {
             clearTimeout(timeoutId);
             chrome.downloads.onChanged.removeListener(listener);
             resolve();
+          } else if (delta.state?.current === 'interrupted') {
+            clearTimeout(timeoutId);
+            chrome.downloads.onChanged.removeListener(listener);
+            // ユーザーキャンセルの場合
+            if (delta.error?.current === 'USER_CANCELED') {
+              reject(new Error('USER_CANCELED'));
+            } else {
+              reject(new Error(`Download failed: ${delta.error?.current || 'interrupted'}`));
+            }
           } else if (delta.error) {
             clearTimeout(timeoutId);
             chrome.downloads.onChanged.removeListener(listener);
@@ -476,7 +599,9 @@ async function saveFile(content, filename) {
     return true;
   } catch (error) {
     console.error('Error saving file:', error);
-    if (error.message.includes('Invalid filename')) {
+    if (error.message === 'USER_CANCELED') {
+      throw new Error('CANCELED');
+    } else if (error.message.includes('Invalid filename')) {
       throw new Error('ファイル名に無効な文字が含まれています。もう一度お試しください。');
     } else if (error.message.includes('Download failed')) {
       throw new Error('ファイルのダウンロードに失敗しました。ブラウザの設定を確認してください。');
@@ -510,7 +635,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const format = formatRadio ? formatRadio.value : 'clean';
       const cleanContentEnabled = format === 'clean';
       
-      const pageData = await getPageContent(cleanContentEnabled);
+      // フィルタリング設定を取得
+      const filterSmallImages = document.getElementById('filterSmallImages').checked;
+      const filterNavigationLinks = document.getElementById('filterNavigationLinks').checked;
+      
+      const pageData = await getPageContent(cleanContentEnabled, filterSmallImages, filterNavigationLinks);
+      
+      if (!pageData || !pageData.content) {
+        throw new Error('Failed to extract page content. Please try again or check if the page is accessible.');
+      }
+      
       const markdown = convertToMarkdown(pageData.content, pageData.frontMatter);
       
       // プレビューを表示
@@ -539,7 +673,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const format = formatRadio ? formatRadio.value : 'clean';
       const cleanContentEnabled = format === 'clean';
       
-      const pageData = await getPageContent(cleanContentEnabled);
+      // フィルタリング設定を取得
+      const filterSmallImages = document.getElementById('filterSmallImages').checked;
+      const filterNavigationLinks = document.getElementById('filterNavigationLinks').checked;
+      
+      const pageData = await getPageContent(cleanContentEnabled, filterSmallImages, filterNavigationLinks);
+      
+      if (!pageData || !pageData.content) {
+        throw new Error('Failed to extract page content. Please try again or check if the page is accessible.');
+      }
       
       showStatus('Converting to Markdown...');
       const markdown = convertToMarkdown(pageData.content, pageData.frontMatter);
@@ -550,12 +692,11 @@ document.addEventListener('DOMContentLoaded', () => {
       await saveFile(markdown, fileName);
     } catch (error) {
       console.error('Error saving file:', error);
-      showStatus(
-        error.name === 'AbortError' 
-          ? 'Save cancelled'
-          : `Error: ${error.message}`,
-        true
-      );
+      if (error.message === 'CANCELED') {
+        showStatus('Save cancelled');
+      } else {
+        showStatus(`Error: ${error.message}`, true);
+      }
     } finally {
       button.disabled = false;
     }
