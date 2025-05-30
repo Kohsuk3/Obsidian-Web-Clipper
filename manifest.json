@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Obsidian Web Clipper",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Notion-level precision web clipper for Obsidian with algorithmic content extraction",
   
   "content_security_policy": {
