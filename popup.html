@@ -63,14 +63,126 @@
       font-weight: bold;
       font-size: 16px;
     }
+
+    .options {
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      background-color: #F9FAFB;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      color: #374151;
+      gap: 8px;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+      margin: 0;
+      transform: scale(1.2);
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #6B7280;
+      margin-top: 4px;
+      margin-left: 24px;
+      line-height: 1.4;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .save-button {
+      flex: 1;
+    }
+
+    .preview-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #F3F4F6;
+      color: #374151;
+      border: 1px solid #D1D5DB;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      flex: 0 0 auto;
+    }
+
+    .preview-button:hover {
+      background-color: #E5E7EB;
+      border-color: #9CA3AF;
+    }
+
+    .preview-button:disabled {
+      background-color: #F9FAFB;
+      color: #9CA3AF;
+      cursor: not-allowed;
+    }
+
+    .preview {
+      width: 100%;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 12px;
+      background-color: #FAFAFA;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+    .preview.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <button id="saveButton" class="save-button">
-      <span class="icon">💾</span>
-      Save to Markdown
-    </button>
+    <div class="options">
+      <label class="checkbox-container">
+        <input type="checkbox" id="cleanContent" checked>
+        <span class="checkmark"></span>
+        スマートクリーンアップ (推奨)
+      </label>
+      <div class="help-text">
+        AI解析でメインコンテンツを特定し、ノイズを除去
+      </div>
+      
+      <label class="checkbox-container">
+        <input type="radio" name="format" value="clean" checked> Clean版 (Notion形式)
+      </label>
+      <label class="checkbox-container">  
+        <input type="radio" name="format" value="raw"> Raw版 (全体保存)
+      </label>
+    </div>
+    
+    <div class="actions">
+      <button id="previewButton" class="preview-button">
+        <span class="icon">👁️</span>
+        プレビュー
+      </button>
+      <button id="saveButton" class="save-button">
+        <span class="icon">💾</span>
+        Save to Markdown
+      </button>
+    </div>
+    
+    <div id="preview" class="preview hidden"></div>
     <div id="status" class="status"></div>
   </div>
   <!-- Turndownライブラリを先に読み込む -->

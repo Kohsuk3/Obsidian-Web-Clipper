@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Obsidian Web Clipper",
-  "version": "1.0",
-  "description": "Save web pages as HTML files to your local folder",
+  "version": "2.0",
+  "description": "Notion-level precision web clipper for Obsidian with AI-powered content extraction",
   
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
@@ -17,10 +17,5 @@
 
   "action": {
     "default_popup": "popup.html"
-  },
-
-  "content_scripts": [{
-    "matches": ["<all_urls>"],
-    "js": ["content.js"]
-  }]
+  }
 }
